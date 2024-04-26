@@ -27,6 +27,7 @@ targets:
   - "IS431_1"
   - "IS431_2"
   - "IS1272"
+  - "IS12960D"
   - "mecA"
   - "mecI"
   - "mecR1"
@@ -82,6 +83,7 @@ profiles:
     excludes:
       - "ccr Type 3"
       - "mecI"
+      - "IS12960D"
   - name: "VI"
     targets:
       - "ccr Type 4"
@@ -90,6 +92,7 @@ profiles:
     targets:
       - "ccr Type 5"
       - "mec Class C"
+      - "IS12960D"
     excludes:
       - "ccr Type 3"
       - "mecI"
