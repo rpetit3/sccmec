@@ -1,0 +1,137 @@
+%YAML 1.2
+---
+# metadata provides information about the schema
+metadata:
+  name: "SCCmec Typing"                              # name of the schema
+  description: "A partial schema for SCCmec typing"  # description of the schema
+  version: "0.1"                                     # version of the schema
+  curators:                                          # A list of curators of the schema
+    - "Robert Petit"
+# engine provides information about the tool and parameters used
+engine:
+  tool: blastn # The tool used to generate the data
+# targets provides a list of sequence targets (primers, genes, proteins, etc...)
+targets:
+  - "ccrA1"
+  - "ccrA2"
+  - "ccrA3"
+  - "ccrA4"
+  - "ccrB1"
+  - "ccrB2"
+  - "ccrB3"
+  - "ccrB4"
+  - "ccrB6"
+  - "ccrC1"
+  - "ccrC2"
+  - "IS431"
+  - "IS431_1"
+  - "IS431_2"
+  - "IS1272"
+  - "mecA"
+  - "mecI"
+  - "mecR1"
+  - "blaZ"
+# aliases allow for grouping of targets under a common name
+aliases:
+  - name: "ccr Type 1"           # name of the alias
+    targets: ["ccrA1", "ccrB1"]  # list of targets that are part of the alias
+  - name: "ccr Type 2"
+    targets: ["ccrA2", "ccrB2"]
+  - name: "ccr Type 3"
+    targets: ["ccrA3", "ccrB3"]
+  - name: "ccr Type 4"
+    targets: ["ccrA4", "ccrB4"]
+  - name: "ccr Type 5"
+    targets: ["ccrC1"]
+  - name: "ccr Type 7"
+    targets: ["ccrA1", "ccrB6"]
+  - name: "ccr Type 8"
+    targets: ["ccrA1", "ccrB3"]
+  - name: "ccr Type 9"
+    targets: ["ccrC2"]
+  - name: "mec Class A"
+    targets: ["IS431", "mecA", "mecR1", "mecI"]
+  - name: "mec Class B"
+    targets: ["IS431", "mecA", "mecR1", "IS1272"]
+  - name: "mec Class C"
+    targets: ["IS431_1", "mecA", "mecR1", "IS431_2"] # mec class C1 and C2 have same targets
+  - name: "mec Class E"
+    targets: ["blaZ", "mecA", "mecR1", "mecI"]
+# profiles includes the final typing designations based on targets and aliases 
+profiles:
+  - name: "I"          # name of the profile
+    targets:           # list of targets that are part of the profile
+      - "ccr Type 1"
+      - "mec Class B"
+  - name: "II"
+    targets:
+      - "ccr Type 2"
+      - "mec Class A"
+  - name: "III"
+    targets:
+      - "ccr Type 3"
+      - "mec Class A"
+  - name: "IV"
+    targets:
+      - "ccr Type 2"
+      - "mec Class B"
+  - name: "V"
+    targets:
+      - "ccr Type 5"
+      - "mec Class C"
+    excludes:
+      - "ccr Type 3"
+      - "mecI"
+  - name: "VI"
+    targets:
+      - "ccr Type 4"
+      - "mec Class B"
+  - name: "VII"
+    targets:
+      - "ccr Type 5"
+      - "mec Class C"
+    excludes:
+      - "ccr Type 3"
+      - "mecI"
+  - name: "VIII"
+    targets:
+      - "ccr Type 4"
+      - "mec Class A"
+    excludes:
+      - "ccr Type 5"
+  - name: "IX"
+    targets:
+      - "ccr Type 1"
+      - "mec Class C"
+    excludes:
+      - "IS1272"
+  - name: "X"
+    targets:
+      - "ccr Type 7"
+      - "mec Class C"
+    excludes:
+      - "mecI"
+  - name: "XI"
+    targets:
+      - "ccr Type 8"
+      - "mec Class E"
+  - name: "XII"
+    targets:
+      - "ccr Type 9"
+      - "mec Class C"
+    excludes:
+      - "mecI"
+  - name: "XIII"
+    targets:
+      - "ccr Type 9"
+      - "mec Class A"
+  - name: "XIV"
+    targets:
+      - "ccr Type 5"
+      - "mec Class A"
+    excludes:
+      - "ccr Type 3"
+  - name: "XV"
+    targets:
+      - "ccr Type 7"
+      - "mec Class A"
