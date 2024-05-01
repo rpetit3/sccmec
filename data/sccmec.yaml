@@ -2,14 +2,17 @@
 ---
 # metadata provides information about the schema
 metadata:
+  id: "sccmec"                                       # id of the schema
   name: "SCCmec Typing"                              # name of the schema
-  description: "A partial schema for SCCmec typing"  # description of the schema
-  version: "0.1"                                     # version of the schema
+  description: "A schema for SCCmec typing"          # description of the schema
+  version: "1.0.0"                                   # version of the schema
   curators:                                          # A list of curators of the schema
     - "Robert Petit"
+
 # engine provides information about the tool and parameters used
 engine:
   tool: blastn # The tool used to generate the data
+
 # targets provides a list of sequence targets (primers, genes, proteins, etc...)
 targets:
   - "ccrA1"
@@ -32,6 +35,7 @@ targets:
   - "mecI"
   - "mecR1"
   - "blaZ"
+
 # aliases allow for grouping of targets under a common name
 aliases:
   - name: "ccr Type 1"           # name of the alias
@@ -58,10 +62,11 @@ aliases:
     targets: ["IS431_1", "mecA", "mecR1", "IS431_2"] # mec class C1 and C2 have same targets
   - name: "mec Class E"
     targets: ["blaZ", "mecA", "mecR1", "mecI"]
-# profiles includes the final typing designations based on targets and aliases 
-profiles:
-  - name: "I"          # name of the profile
-    targets:           # list of targets that are part of the profile
+
+# types includes the final typing designations based on targets and aliases 
+types:
+  - name: "I"          # name of the types
+    targets:           # list of targets that are part of the types
       - "ccr Type 1"
       - "mec Class B"
   - name: "II"
@@ -80,7 +85,7 @@ profiles:
     targets:
       - "ccr Type 5"
       - "mec Class C"
-    excludes:
+    excludes:          # list of targets that if present will exclude the type
       - "ccr Type 3"
       - "mecI"
       - "IS12960D"

@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+version="1.0.0"
+sccmec_dir=$(dirname $0)
+
+CAML_YAML="${sccmec_dir}/../share/sccmec/sccmec.yaml" \
+CAML_TARGETS="${sccmec_dir}/../share/sccmec/sccmec.fasta" \
+    camlhmp-blast \
+    "${@:1}"
