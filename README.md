@@ -45,7 +45,7 @@ conda activate sccmec
 sccmec --help
 ```
 
-__Note:__ `sccmec` is just a wrapper around [camlhmp-blast](https://github.com/rpetit3/camlhmp?tab=readme-ov-file#camlhmp-blast)
+__Note:__ `sccmec` is just a wrapper around [camlhmp](https://github.com/rpetit3/camlhmp)
 with the defaults for `--yaml` and `--targets` already set. Please don't let this confuse you
 when you see all the camels!
 
@@ -54,7 +54,7 @@ when you see all the camels!
 ```bash
  Usage: camlhmp-blast [OPTIONS]                                                                                                  
 
- 🐪 camlhmp-blast 🐪 - Classify assemblies with a camlhmp schema using BLAST                                                     
+ 🐪 camlhmp-blast-targets 🐪 - Classify assemblies with a camlhmp schema using BLAST                                                     
 
 ╭─ Options ───────────────────────────────────────────────────────────────────────────────────╮
 │    --version       -V           Show the version and exit.                                  │

@@ -5,7 +5,7 @@ metadata:
   id: "sccmec"                                       # id of the schema
   name: "SCCmec Typing"                              # name of the schema
   description: "A schema for SCCmec typing"          # description of the schema
-  version: "1.0.0"                                   # version of the schema
+  version: "1.1.0"                                   # version of the schema
   curators:                                          # A list of curators of the schema
     - "Robert Petit"
 
