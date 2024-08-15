@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+sccmec_dir=$(dirname $0)
+
+CAML_YAML="${sccmec_dir}/../data/sccmec-regions.yaml" \
+CAML_TARGETS="${sccmec_dir}/../data/sccmec-regions.fasta" \
+    camlhmp-blast-regions \
+    "${@:1}"

@@ -4,5 +4,5 @@ sccmec_dir=$(dirname $0)
 
 CAML_YAML="${sccmec_dir}/../share/sccmec/sccmec.yaml" \
 CAML_TARGETS="${sccmec_dir}/../share/sccmec/sccmec.fasta" \
-    camlhmp-blast \
+    camlhmp-blast-targets \
     "${@:1}"

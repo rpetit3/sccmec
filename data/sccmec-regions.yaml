@@ -1,0 +1,117 @@
+%YAML 1.2
+---
+# metadata provides information about the schema
+metadata:
+  id: "sccmec_regions"                                            # id of the schema
+  name: "SCCmec Typing"                                           # name of the schema
+  description: "A schema for SCCmec typing using full cassettes"  # description of the schema
+  version: "1.0.0"                                                # version of the schema
+  curators:                                                       # A list of curators of the schema
+    - "Robert A. Petit III"
+
+# engine provides information about the tool and parameters used
+engine:
+  type: "blast" # The type of engine to use
+  tool: blastn # The tool used to generate the data
+
+# targets provides a list of sequence targets (primers, genes, proteins, etc...)
+targets:
+  - "Ia"
+  - "Ib"
+  - "IIa"
+  - "IIb"
+  - "IIc"
+  - "IId"
+  - "IIe"
+  - "III"
+  - "IVa"
+  - "IVb"
+  - "IVc"
+  - "IVd"
+  - "IVg"
+  - "IVi"
+  - "IVj"
+  - "IVk"
+  - "IVl"
+  - "IVm"
+  - "IVn"
+  - "IX"
+  - "VI"
+  - "VII"
+  - "VIII"
+  - "Va"
+  - "Vb"
+  - "Vc"
+  - "X"
+  - "XI"
+  - "XII"
+  - "XIII"
+  - "XIV"
+  - "XV"
+
+# types includes the final typing designations based on targets and aliases 
+types:
+  - name: "Ia"               # name of the types
+    targets: ["Ia"]          # list of targets that are part of the types
+  - name: "Ib"
+    targets: ["Ib"]
+  - name: "IIa"
+    targets: ["IIa"]
+  - name: "IIb"
+    targets: ["IIb"]
+  - name: "IIc"
+    targets: ["IIc"]
+  - name: "IId"
+    targets: ["IId"]
+  - name: "IIe"
+    targets: ["IIe"]
+  - name: "III"
+    targets: ["III"]
+  - name: "IVa"
+    targets: ["IVa"]
+  - name: "IVb"
+    targets: ["IVb"]
+  - name: "IVc"
+    targets: ["IVc"]
+  - name: "IVd"
+    targets: ["IVd"]
+  - name: "IVg"
+    targets: ["IVg"]
+  - name: "IVi"
+    targets: ["IVi"]
+  - name: "IVj"
+    targets: ["IVj"]
+  - name: "IVk"
+    targets: ["IVk"]
+  - name: "IVl"
+    targets: ["IVl"]
+  - name: "IVm" 
+    targets: ["IVm"]
+  - name: "IVn"
+    targets: ["IVn"]
+  - name: "Va"
+    targets: ["Va"]
+  - name: "Vb"
+    targets: ["Vb"]
+  - name: "Vc"
+    targets: ["Vc"]
+  - name: "VI"
+    targets: ["VI"]
+  - name: "VII"
+    targets: ["VII"]
+  - name: "VIII"
+    targets: ["VIII"]
+  - name: "IX"
+    targets: ["IX"]
+  - name: "X"
+    targets: ["X"]
+  - name: "XI"
+    targets: ["XI"]
+  - name: "XII" 
+    targets: ["XII"]
+  - name: "XIII"
+    targets: ["XIII"]
+  - name: "XIV"
+    targets: ["XIV"]
+  - name: "XV"
+    targets: ["XV"]
