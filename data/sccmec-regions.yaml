@@ -3,9 +3,9 @@
 # metadata provides information about the schema
 metadata:
   id: "sccmec_regions"                                            # id of the schema
-  name: "SCCmec Typing"                                           # name of the schema
+  name: "SCCmec Typing (regions)"                                 # name of the schema
   description: "A schema for SCCmec typing using full cassettes"  # description of the schema
-  version: "1.1.0"                                                # version of the schema
+  version: "1.2.0"                                                # version of the schema
   curators:                                                       # A list of curators of the schema
     - "Robert A. Petit III"
 
@@ -35,13 +35,13 @@ targets:
   - "IVl"
   - "IVm"
   - "IVn"
-  - "IX"
-  - "VI"
-  - "VII"
-  - "VIII"
   - "Va"
   - "Vb"
   - "Vc"
+  - "VI"
+  - "VII"
+  - "VIII"
+  - "IX"
   - "X"
   - "XI"
   - "XII"

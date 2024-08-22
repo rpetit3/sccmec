@@ -1,7 +1,439 @@
-#!/usr/bin/env bash
-sccmec_dir=$(dirname $0)
+#! /usr/bin/env python
+import logging
+import os
+import sys
+from pathlib import Path
 
-CAML_YAML="${sccmec_dir}/../data/sccmec.yaml" \
-CAML_TARGETS="${sccmec_dir}/../data/sccmec.fasta" \
-    camlhmp-blast-targets \
-    "${@:1}"
+import rich
+import rich.console
+import rich.traceback
+import rich_click as click
+from rich import print
+from rich.logging import RichHandler
+from rich.table import Table
+
+import camlhmp
+from camlhmp.engines.blast import run_blast
+from camlhmp.framework import check_regions, check_types, get_types, print_versions, read_framework
+from camlhmp.parsers.blast import get_blast_region_hits, get_blast_target_hits, finalize_targets, finalize_regions
+from camlhmp.utils import file_exists_error, parse_seq_lengths, validate_engine, validate_file, write_tsv, remove_lowercase
+
+DB_PATH = str(Path(__file__).parent.absolute()).replace("bin", "data")
+
+# Set up Rich
+stderr = rich.console.Console(stderr=True)
+rich.traceback.install(console=stderr, width=200, word_wrap=True, extra_lines=1)
+click.rich_click.USE_RICH_MARKUP = True
+click.rich_click.OPTION_GROUPS = {
+    "sccmec": [
+        {
+            "name": "Required Options",
+            "options": [
+                "--input",
+                "--yaml-targets",
+                "--yaml-regions",
+                "--targets",
+                "--regions",
+            ],
+        },
+        {
+            "name": "Filtering Options",
+            "options": [
+                "--min-targets-pident",
+                "--min-targets-coverage",
+                "--min-regions-pident",
+                "--min-regions-coverage",
+            ],
+        },
+        {
+            "name": "Additional Options",
+            "options": [
+                "--prefix",
+                "--outdir",
+                "--force",
+                "--verbose",
+                "--silent",
+                "--version",
+                "--help",
+            ],
+        },
+    ]
+}
+
+
+@click.command()
+@click.option(
+    "--input",
+    "-i",
+    required=False if "--version" in sys.argv else True,
+    help="Input file in FASTA format to classify",
+)
+@click.option(
+    "--yaml-targets",
+    "-yt",
+    required=True,
+    default=os.environ.get("CAML_YAML", None),
+    show_default=True,
+    help="YAML file documenting the targets and types",
+)
+@click.option(
+    "--yaml-regions",
+    "-yr",
+    required=True,
+    default=os.environ.get("CAML_YAML", None),
+    show_default=True,
+    help="YAML file documenting the regions and types",
+)
+@click.option(
+    "--targets",
+    "-t",
+    required=False if "--version" in sys.argv else True,
+    default=os.environ.get("CAML_TARGETS", None),
+    show_default=True,
+    help="Query targets in FASTA format",
+)
+@click.option(
+    "--regions",
+    "-r",
+    required=False if "--version" in sys.argv else True,
+    default=os.environ.get("CAML_TARGETS", None),
+    show_default=True,
+    help="Query regions in FASTA format",
+)
+@click.option(
+    "--outdir",
+    "-o",
+    type=click.Path(exists=False),
+    default="./",
+    show_default=True,
+    help="Directory to write output",
+)
+@click.option(
+    "--prefix",
+    "-p",
+    type=str,
+    default="sccmec",
+    show_default=True,
+    help="Prefix to use for output files",
+)
+@click.option(
+    "--min-targets-pident",
+    default=95,
+    show_default=True,
+    help="Minimum percent identity of targets to count a hit",
+)
+@click.option(
+    "--min-targets-coverage",
+    default=95,
+    show_default=True,
+    help="Minimum percent coverage of targets to count a hit",
+)
+@click.option(
+    "--min-regions-pident",
+    default=95,
+    show_default=True,
+    help="Minimum percent identity of regions to count a hit",
+)
+@click.option(
+    "--min-regions-coverage",
+    default=95,
+    show_default=True,
+    help="Minimum percent coverage of regions to count a hit",
+)
+@click.option("--force", is_flag=True, help="Overwrite existing reports")
+@click.option("--verbose", is_flag=True, help="Increase the verbosity of output")
+@click.option("--silent", is_flag=True, help="Only critical errors will be printed")
+@click.option("--version", is_flag=True, help="Print schema and camlhmp version")
+def sccmec(
+    input,
+    yaml_targets,
+    yaml_regions,
+    targets,
+    regions,
+    prefix,
+    outdir,
+    min_targets_pident,
+    min_targets_coverage,
+    min_regions_pident,
+    min_regions_coverage,
+    force,
+    verbose,
+    silent,
+    version,
+):
+    """sccmec - typing SCCmec cassettes in assemblies"""
+    # Setup logs
+    logging.basicConfig(
+        format="%(asctime)s:%(name)s:%(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        handlers=[
+            RichHandler(rich_tracebacks=True, console=rich.console.Console(stderr=True))
+        ],
+    )
+    logging.getLogger().setLevel(
+        logging.ERROR if silent else logging.DEBUG if verbose else logging.INFO
+    )
+
+    # Verify input files are available
+    # Targets first
+    targets_yaml_path = validate_file(yaml_targets)
+    regions_yaml_path = validate_file(yaml_regions)
+
+    # Read the YAML file
+    targets_framework = read_framework(targets_yaml_path)
+    regions_framework = read_framework(regions_yaml_path)
+
+    # If prompted, print the schema and camlhmp version, then exit
+    if version:
+        print_versions([targets_framework, regions_framework])
+
+    # Verify remaining input files
+    input_path = validate_file(input)
+    targets_path = validate_file(targets)
+    regions_path = validate_file(regions)
+    logging.debug(f"Processing {targets}")
+
+    # Validate acceptable engines
+    validate_engine("sccmec-targets", targets_framework["engine"]["type"], ["blast"])
+    validate_engine("sccmec-regions", regions_framework["engine"]["type"], ["blast"])
+
+    # Create the output directory
+    logging.debug(f"Creating output directory: {outdir}")
+    Path(outdir).mkdir(parents=True, exist_ok=True)
+
+    # Output files
+    result_tsv = f"{outdir}/{prefix}.tsv".replace("//", "/")
+    targets_blast_tsv = f"{outdir}/{prefix}.targets.{targets_framework['engine']['tool']}.tsv".replace(
+        "//", "/"
+    )
+    targets_details_tsv = f"{outdir}/{prefix}.targets.details.tsv".replace("//", "/")
+    regions_blast_tsv = f"{outdir}/{prefix}.regions.{regions_framework['engine']['tool']}.tsv".replace(
+        "//", "/"
+    )
+    regions_details_tsv = f"{outdir}/{prefix}.regions.details.tsv".replace("//", "/")
+
+    # Make sure output files don't already exist
+    file_exists_error(result_tsv, force)
+    file_exists_error(targets_blast_tsv, force)
+    file_exists_error(targets_details_tsv, force)
+    file_exists_error(regions_blast_tsv, force)
+    file_exists_error(regions_details_tsv, force)
+
+    # Describe the command line arguments
+    console = rich.console.Console(stderr=True)
+    print(
+        "[italic]Running [deep_sky_blue1]sccmec[/deep_sky_blue1] (via camlhmp) with following parameters:[/italic]",
+        file=sys.stderr,
+    )
+    print(f"[italic]    --input {input}[/italic]", file=sys.stderr)
+    print(f"[italic]    --yaml-targets {yaml_targets}[/italic]", file=sys.stderr)
+    print(f"[italic]    --yaml-regions {yaml_regions}[/italic]", file=sys.stderr)
+    print(f"[italic]    --targets {targets}[/italic]", file=sys.stderr)
+    print(f"[italic]    --regions {regions}[/italic]", file=sys.stderr)
+    print(f"[italic]    --outdir {outdir}[/italic]", file=sys.stderr)
+    print(f"[italic]    --prefix {prefix}[/italic]", file=sys.stderr)
+    print(f"[italic]    --min-targets-pident {min_targets_pident}[/italic]", file=sys.stderr)
+    print(f"[italic]    --min-targets-coverage {min_targets_coverage}[/italic]", file=sys.stderr)
+    print(f"[italic]    --min-regions-pident {min_regions_pident}[/italic]", file=sys.stderr)
+    print(f"[italic]    --min-regions-coverage {min_regions_coverage}[/italic]", file=sys.stderr)
+
+    """
+    Run the SCCmec typing for targets first
+    """
+    print(
+        f"[italic]Starting camlhmp for {targets_framework['metadata']['name']}...[/italic]",
+        file=sys.stderr,
+    )
+
+    # Run blast
+    print(f"[italic]Running {targets_framework['engine']['tool']}...[/italic]", file=sys.stderr)
+    target_hits, target_blast_stdout, target_blast_stderr = run_blast(
+        targets_framework['engine']['tool'], input_path, targets_path, min_targets_pident, min_targets_coverage
+    )
+    target_results = get_blast_target_hits(targets_framework["targets"], target_hits)
+    mecA = "+" if target_results["mecA"] else "-"
+
+    # Process the hits against the types
+    print("[italic]Processing target hits...[/italic]", file=sys.stderr)
+    target_types = get_types(targets_framework)
+    type_hits = check_types(target_types, target_results)
+
+    # Finalize the details of target-based hits
+    final_target_type, final_target_details = finalize_targets(
+        prefix,
+        target_results,
+        type_hits,
+        targets_framework,
+        min_targets_coverage,
+        min_targets_pident,
+    )
+
+    """
+    Run the SCCmec typing for regions
+    """
+    print(
+        f"[italic]Starting camlhmp for {regions_framework['metadata']['name']}...[/italic]",
+        file=sys.stderr,
+    )
+
+    # Run blast
+    print(f"[italic]Running {regions_framework['engine']['tool']}...[/italic]", file=sys.stderr)
+    region_hits, region_blast_stdout, region_blast_stderr = run_blast(
+        regions_framework['engine']['tool'],input_path, regions_path, 0, 0
+    )
+
+    # Get lengths of the targets
+    region_lengths = parse_seq_lengths(regions_path, "fasta")
+    region_results = get_blast_region_hits(region_lengths, region_blast_stdout, min_regions_pident, min_regions_coverage)
+
+    # Process the hits against the types
+    print("[italic]Processing region hits...[/italic]", file=sys.stderr)
+    region_types = get_types(regions_framework)
+    region_type_hits = check_regions(region_types, region_results, min_regions_coverage)
+
+    final_region_type, final_region_details = finalize_regions(
+        prefix,
+        region_type_hits,
+        regions_framework,
+        min_regions_coverage,
+        min_regions_pident,
+    )
+
+    # Get a list of types with subtypes
+    subtype_to_type = {}
+    for subtype in region_types:
+        subtype_to_type[subtype] = remove_lowercase(subtype)
+
+    # Final Result
+    final_result = {
+        "sample": prefix,
+        "type": final_target_type['type'],
+        "subtype": final_region_type['type'],
+        "mecA": mecA,
+        "targets": final_target_type['targets'],
+        "regions": final_region_type['targets'],
+        "coverage": final_region_type['coverage'],
+        "hits": final_region_type['hits'],
+        "target_schema": final_target_type["schema"],
+        "target_schema_version": final_target_type["schema_version"],
+        "region_schema": final_region_type["schema"],
+        "region_schema_version": final_region_type["schema_version"],
+        "camlhmp_version": camlhmp.__version__,
+        "params": f"min-targets-coverage={min_targets_coverage};min-targets-pident={min_targets_pident};min-regions-coverage={min_regions_coverage};min-regions-pident={min_regions_pident}",
+        "target_comment": final_target_type["comment"],
+        "region_comment": final_region_type["comment"],
+        "comment": '',
+    }
+
+    # Adjust final types based on comparison of targets and regions
+    region_type = final_region_type['type']
+    target_type = final_target_type['type']
+    comment = ''
+
+    if (target_type == "-" or region_type != "-") and region_type != "multiple" and target_type != "multiple":
+        if target_type == "-" and region_type != "-":
+            final_result['type'] = subtype_to_type[region_type]
+            comment = f"Type and Subtype are based on coverage against cassette {region_type}"
+        elif target_type != "-" and region_type == "-":
+            comment = "Type is based only the target matches, no cassette met the minimum coverage threshold"
+        elif target_type == "-" and region_type == "-":
+            comment = "A type could not be determined based on the target matches or cassette coverage"
+    elif region_type == "multiple":
+        # Are the multiple types the same?
+        types_matched = {}
+        for region in final_region_type['targets'].split(","):
+            types_matched[subtype_to_type[region]] = 1
+
+        if len(types_matched) == 1:
+            final_result['type'] = list(types_matched.keys())[0]
+            comment = "The type was determined based on matches to multiple subtypes of the same type"
+        else:
+            comment = "Multiple types were found based on the cassette coverage"
+    elif target_type == "multiple":
+        types_matched = {}
+        for target in final_target_type['comment'].split(":")[1].split(","):
+            target = target.strip()
+            if region_type != "-":
+                if target == subtype_to_type[region_type]:
+                    types_matched[target] = 1
+
+        if len(types_matched) == 1:
+            final_result['type'] = list(types_matched.keys())[0]
+            comment = f"Type and Subtype are based on coverage against cassette {region_type}"
+    else:
+        if region_type != "-":
+            if target_type == subtype_to_type[region_type]:
+                if target_type != region_type:
+                    comment = f"Subtype is based coverage against cassette {region_type}"
+
+    final_result["comment"] = comment
+
+    print("[italic]Final Results...[/italic]", file=sys.stderr)
+    type_table = Table(title="SCCmec Typing")
+    type_table.add_column("sample", style="white")
+    type_table.add_column("type", style="white")
+    type_table.add_column("subtype", style="white")
+    type_table.add_column("mecA", style="white")
+    type_table.add_column("targets", style="cyan")
+    type_table.add_column("regions", style="cyan")
+    type_table.add_column("coverages", style="cyan")
+    type_table.add_column("hits", style="cyan")
+    type_table.add_column("target_schema", style="cyan")
+    type_table.add_column("target_schema_version", style="cyan")
+    type_table.add_column("region_schema", style="cyan")
+    type_table.add_column("region_schema_version", style="cyan")
+    type_table.add_column("camlhmp_version", style="cyan")
+    type_table.add_column("params", style="cyan")
+    type_table.add_column("target_comment", style="cyan")
+    type_table.add_column("region_comment", style="cyan")
+    type_table.add_column("comment", style="cyan")
+
+    type_table.add_row(
+        *final_result.values()
+    )
+    console.print(type_table)
+
+    print(
+        f"[italic]Final predicted type written to [deep_sky_blue1]{result_tsv}[/deep_sky_blue1][/italic]",
+        file=sys.stderr,
+    )
+    write_tsv([final_result], result_tsv)
+
+    # Write target-based details for each type
+    print(
+        f"[italic]Target-based results against each type written to [deep_sky_blue1]{targets_details_tsv}[/deep_sky_blue1][/italic]",
+        file=sys.stderr,
+    )
+    write_tsv(final_target_details, targets_details_tsv)
+
+    # Write target-based blast results
+    print(
+        f"Target-based [italic]{targets_framework['engine']['tool']} results written to [deep_sky_blue1]{targets_blast_tsv}[/deep_sky_blue1][/italic]",
+        file=sys.stderr,
+    )
+    write_tsv(target_blast_stdout, targets_blast_tsv)
+
+    # Write region-based details for each type
+    print(
+        f"[italic]Region-based results against each type written to [deep_sky_blue1]{regions_details_tsv}[/deep_sky_blue1][/italic]",
+        file=sys.stderr,
+    )
+    write_tsv(final_region_details, regions_details_tsv)
+
+    # Write region-based blast results
+    print(
+        f"Region-based [italic]{regions_framework['engine']['tool']} results written to [deep_sky_blue1]{regions_blast_tsv}[/deep_sky_blue1][/italic]",
+        file=sys.stderr,
+    )
+    write_tsv(region_blast_stdout, regions_blast_tsv)
+
+
+def main():
+    if len(sys.argv) == 1:
+        sccmec.main(["--help"])
+    else:
+        sccmec()
+
+
+if __name__ == "__main__":
+    main()
