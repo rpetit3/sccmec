@@ -332,8 +332,11 @@ def sccmec(
 
     if (target_type == "-" or region_type != "-") and region_type != "multiple" and target_type != "multiple":
         if target_type == "-" and region_type != "-":
-            final_result['type'] = subtype_to_type[region_type]
-            comment = f"Type and Subtype are based on coverage against cassette {region_type}"
+            if mecA == "+":
+                final_result['type'] = subtype_to_type[region_type]
+                comment = f"Type and Subtype are based on coverage against cassette {region_type}"
+            else:
+                comment = f"A cassette ({region_type}) had significant coverage, but mecA was not found"
         elif target_type != "-" and region_type == "-":
             comment = "Type is based only the target matches, no cassette met the minimum coverage threshold"
         elif target_type == "-" and region_type == "-":
@@ -358,8 +361,11 @@ def sccmec(
                     types_matched[target] = 1
 
         if len(types_matched) == 1:
-            final_result['type'] = list(types_matched.keys())[0]
-            comment = f"Type and Subtype are based on coverage against cassette {region_type}"
+            if mecA == "+":
+                final_result['type'] = list(types_matched.keys())[0]
+                comment = f"Type and Subtype are based on coverage against cassette {region_type}"
+            else:
+                comment = f"A cassette ({region_type}) had significant coverage, but mecA was not found"
     else:
         if region_type != "-":
             if target_type == subtype_to_type[region_type]:
