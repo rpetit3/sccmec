@@ -6,7 +6,7 @@ tasks:
       pip install graphviz
       . /opt/conda/etc/profile.d/conda.sh
       conda activate base
-      mamba create -n sccmec-dev -y -q -c conda-forge -c bioconda 'camlhmp>=1.0.0'
+      conda create -n sccmec-dev -y -q -c conda-forge -c bioconda 'camlhmp>=1.0.0'
       conda activate sccmec-dev
       git checkout main
 vscode:
