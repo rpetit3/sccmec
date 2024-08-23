@@ -1,4 +1,4 @@
-image: nfcore/gitpod:latest
+image: condaforge/miniforge3:24.3.0-0
 
 tasks:
   - name: Initialize
