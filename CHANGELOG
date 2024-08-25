@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.2.0 rpetit3/sccmec "" 2024/08/25
+
+- Utilize both targets and full cassettes for classification
+- update default thresholds based on `camlhmp-blast-thresholds`
+    - `--min-targets-pident` 90
+    - `--min-targets-coverage` 80
+    - `--min-regions-pident` 85
+    - `--min-regions-coverage` 83
+- default values are set in YAMLs
+
 ## v1.1.0 rpetit3/sccmec "USA300" 2024/08/15
 
 - Update for latest camlhmp changes
@@ -7,3 +17,28 @@
 ## v1.0.0 rpetit3/sccmec "MRSA" 2024/04/30
 
 - Initial release
+
+@click.option(
+    "--min-targets-pident",
+    default=90,
+    show_default=True,
+    help="Minimum percent identity of targets to count a hit",
+)
+@click.option(
+    "--min-targets-coverage",
+    default=80,
+    show_default=True,
+    help="Minimum percent coverage of targets to count a hit",
+)
+@click.option(
+    "--min-regions-pident",
+    default=85,
+    show_default=True,
+    help="Minimum percent identity of regions to count a hit",
+)
+@click.option(
+    "--min-regions-coverage",
+    default=83,
+    show_default=True,
+    help="Minimum percent coverage of regions to count a hit",
+)

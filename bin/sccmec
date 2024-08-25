@@ -72,7 +72,7 @@ click.rich_click.OPTION_GROUPS = {
     "--yaml-targets",
     "-yt",
     required=True,
-    default=os.environ.get("CAML_YAML", None),
+    default=os.environ.get("SCCMEC_TARGETS_YAML", None),
     show_default=True,
     help="YAML file documenting the targets and types",
 )
@@ -80,7 +80,7 @@ click.rich_click.OPTION_GROUPS = {
     "--yaml-regions",
     "-yr",
     required=True,
-    default=os.environ.get("CAML_YAML", None),
+    default=os.environ.get("SCCMEC_REGIONS_YAML", None),
     show_default=True,
     help="YAML file documenting the regions and types",
 )
@@ -88,7 +88,7 @@ click.rich_click.OPTION_GROUPS = {
     "--targets",
     "-t",
     required=False if "--version" in sys.argv else True,
-    default=os.environ.get("CAML_TARGETS", None),
+    default=os.environ.get("SCCMEC_TARGETS_FASTA", None),
     show_default=True,
     help="Query targets in FASTA format",
 )
@@ -96,7 +96,7 @@ click.rich_click.OPTION_GROUPS = {
     "--regions",
     "-r",
     required=False if "--version" in sys.argv else True,
-    default=os.environ.get("CAML_TARGETS", None),
+    default=os.environ.get("SCCMEC_REGIONS_FASTA", None),
     show_default=True,
     help="Query regions in FASTA format",
 )
@@ -118,25 +118,25 @@ click.rich_click.OPTION_GROUPS = {
 )
 @click.option(
     "--min-targets-pident",
-    default=95,
+    default=90,
     show_default=True,
     help="Minimum percent identity of targets to count a hit",
 )
 @click.option(
     "--min-targets-coverage",
-    default=95,
+    default=80,
     show_default=True,
     help="Minimum percent coverage of targets to count a hit",
 )
 @click.option(
     "--min-regions-pident",
-    default=95,
+    default=85,
     show_default=True,
     help="Minimum percent identity of regions to count a hit",
 )
 @click.option(
     "--min-regions-coverage",
-    default=95,
+    default=83,
     show_default=True,
     help="Minimum percent coverage of regions to count a hit",
 )
@@ -218,6 +218,21 @@ def sccmec(
     file_exists_error(targets_details_tsv, force)
     file_exists_error(regions_blast_tsv, force)
     file_exists_error(regions_details_tsv, force)
+
+    # Check if params are set in the YAML (only change if not set on the command line)
+    if "--min-targets-pident" not in sys.argv:
+        if "min_pident" in targets_framework["engine"]["params"]:
+            min_pident = targets_framework["engine"]["params"]["min_pident"]
+    if "--min-targets-coverage" not in sys.argv:
+        if "min_coverage" in targets_framework["engine"]["params"]:
+            min_coverage = targets_framework["engine"]["params"]["min_coverage"]
+
+    if "--min-regions-pident" not in sys.argv:
+        if "min_pident" in regions_framework["engine"]["params"]:
+            min_pident = regions_framework["engine"]["params"]["min_pident"]
+    if "--min-regions-coverage" not in sys.argv:
+        if "min_coverage" in regions_framework["engine"]["params"]:
+            min_coverage = regions_framework["engine"]["params"]["min_coverage"]
 
     # Describe the command line arguments
     console = rich.console.Console(stderr=True)

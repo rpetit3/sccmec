@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+sccmec_dir=$(dirname $0)
+
+SCCMEC_TARGETS_YAML="${sccmec_dir}/../share/sccmec/sccmec-targets.yaml" \
+SCCMEC_TARGETS_FASTA="${sccmec_dir}/../share/sccmec/sccmec-targets.fasta" \
+SCCMEC_REGIONS_YAML="${sccmec_dir}/../share/sccmec/sccmec-regions.yaml" \
+SCCMEC_REGIONS_FASTA="${sccmec_dir}/../share/sccmec/sccmec-regions.fasta" \
+    sccmec-main \
+    "${@:1}"

@@ -13,6 +13,9 @@ metadata:
 engine:
   type: "blast" # The type of engine to use
   tool: blastn # The tool used to generate the data
+  params:
+    min_pident: 90    # The minimum percent identity for a hit
+    min_coverage: 80  # The minimum coverage for a hit
 
 # targets provides a list of sequence targets (primers, genes, proteins, etc...)
 targets:
