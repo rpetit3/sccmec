@@ -222,17 +222,17 @@ def sccmec(
     # Check if params are set in the YAML (only change if not set on the command line)
     if "--min-targets-pident" not in sys.argv:
         if "min_pident" in targets_framework["engine"]["params"]:
-            min_pident = targets_framework["engine"]["params"]["min_pident"]
+            min_targets_pident = targets_framework["engine"]["params"]["min_pident"]
     if "--min-targets-coverage" not in sys.argv:
         if "min_coverage" in targets_framework["engine"]["params"]:
-            min_coverage = targets_framework["engine"]["params"]["min_coverage"]
+            min_targets_coverage = targets_framework["engine"]["params"]["min_coverage"]
 
     if "--min-regions-pident" not in sys.argv:
         if "min_pident" in regions_framework["engine"]["params"]:
-            min_pident = regions_framework["engine"]["params"]["min_pident"]
+            min_regions_pident = regions_framework["engine"]["params"]["min_pident"]
     if "--min-regions-coverage" not in sys.argv:
         if "min_coverage" in regions_framework["engine"]["params"]:
-            min_coverage = regions_framework["engine"]["params"]["min_coverage"]
+            min_regions_coverage = regions_framework["engine"]["params"]["min_coverage"]
 
     # Describe the command line arguments
     console = rich.console.Console(stderr=True)
